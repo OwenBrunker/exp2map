@@ -1,10 +1,18 @@
 
   PROGRAM
 
+OMIT('***')
+ * Created with Clarion 11.1
+ * User: owen
+ * Date: 23/12/22
+ * Time: 4:40 PM
+ * 
+ * To change this template use Tools | Options | Coding | Edit Standard Headers.
+ ***
 
-MANGLECODE:PassByRef  			 		 EQUATE('R')
+MANGLECODE:PassByRef  			 EQUATE('R')
 MANGLECODE:PassByRefOptional     EQUATE('P')
-MANGLECODE:Optional   			 	   EQUATE('O')
+MANGLECODE:Optional   			 EQUATE('O')
 MANGLECODE:EntityPrefix          EQUATE('B')
 MANGLECODE:UnsignedPrefix        EQUATE('U')
 MANGLECODE:Complex               EQUATE('b')
@@ -42,6 +50,37 @@ MANGLECODE:Group                 EQUATE('g')
 MANGLECODE:Any                   EQUATE('u')
 MANGLECODE:Any2                  EQUATE('u')
 
+TYPE:File					EQUATE('FILE')
+TYPE:Blob					EQUATE('BLOB')
+TYPE:Key                    EQUATE('KEY')
+TYPE:Queue                  EQUATE('QUEUE')
+TYPE:Report                 EQUATE('REPORT')
+TYPE:Window                 EQUATE('WINDOW')
+TYPE:View                   EQUATE('VIEW')
+TYPE:Application            EQUATE('APPLICATION')
+TYPE:Byte                   EQUATE('BYTE')
+TYPE:Ushort                 EQUATE('USHORT')
+TYPE:Ulong                  EQUATE('ULONG')
+TYPE:Date                   EQUATE('DATE')
+TYPE:Time                   EQUATE('TIME')
+TYPE:Bfloat4                EQUATE('BFLOAT4')
+TYPE:Bfloat8                EQUATE('BFLOAT8')
+TYPE:String                 EQUATE('STRING')
+TYPE:Pstring                EQUATE('PSTRING')
+TYPE:Cstring                EQUATE('CSTRING')
+TYPE:Short                  EQUATE('SHORT')
+TYPE:Long                   EQUATE('LONG')
+TYPE:Sreal                  EQUATE('SREAL')
+TYPE:Real                   EQUATE('REAL')
+TYPE:Decimal                EQUATE('DECIMAL')
+TYPE:Pdecimal               EQUATE('PDECIMAL')
+TYPE:CstringRaw             EQUATE('CSTRINGRAW')
+TYPE:GroupRaw               EQUATE('GROUPRAW')
+TYPE:Group                  EQUATE('GROUP')
+TYPE:Any                    EQUATE('ANY')
+TYPE:Function               EQUATE('FUNCTION')
+TYPE:FunctionEnd            EQUATE('FUNCTIONEND')
+
 
 TYPE_TypesQueue     QUEUE,TYPE
 ParameterType           STRING(255)
@@ -51,6 +90,11 @@ IsReferenceYN           BOOL   ! R
 IsOptionalReferenceYN   BOOL   ! P
                     END
 
+TYPE_TokensQueue    QUEUE
+ScanToken               STRING(2)
+ReturnToken             STRING(10)
+                    END
+
 
     MAP
     END
@@ -58,7 +102,7 @@ IsOptionalReferenceYN   BOOL   ! P
 
 
 ExpParser           CLASS,TYPE
-ExpString                &STRING
+ExpString               &STRING
 ExpStringLength          LONG
 CharacterIndex           LONG
 
@@ -67,6 +111,7 @@ Destruct                PROCEDURE()
 Destroy                 PROCEDURE()
 Parse                   PROCEDURE(*STRING ExpString, *TYPE_TypesQueue q)
 GetToken                PROCEDURE(),STRING
+IsTokenPreamble         PROCEDURE(STRING Token),BOOL
                     END
 
 
@@ -96,7 +141,7 @@ PARSESTATE:ParameterPreamble EQUATE
 PARSESTATE:ParameterType     EQUATE
 PARSESTATE:ParameterDone     EQUATE
                         END
-
+ParameterCounter        LONG
     CODE
         SELF.ExpString &= ExpString
         FREE(q)
@@ -104,6 +149,7 @@ PARSESTATE:ParameterDone     EQUATE
         
         SELF.ExpStringLength = LEN(CLIP(SELF.ExpString))
         SELF.CharacterIndex  = 0
+        ParameterCounter     = 0
         
         Token = SELF.GetToken()
         LOOP WHILE Token <> ''
@@ -125,17 +171,89 @@ PARSESTATE:ParameterDone     EQUATE
                 
             OF PARSESTATE:ParameterPreamble
                 CASE Token
+                OF MANGLECODE:PassByRef
+                    q.IsReferenceYN = TRUE
+                OF MANGLECODE:Optional
+                    q.IsOptionalYN = TRUE
+                OF MANGLECODE:PassByRefOptional
+                    q.IsOptionalReferenceYN = TRUE
                 END
                 
                 ParseState = PARSESTATE:ParameterType
                 
             OF PARSESTATE:ParameterType
                 CASE Token
+                OF MANGLECODE:File
+                    q.ParameterType = TYPE:File
+                OF MANGLECODE:Blob
+                    q.ParameterType = TYPE:Blob
+                OF MANGLECODE:Key
+                    q.ParameterType = TYPE:Key
+                OF MANGLECODE:Queue
+                    q.ParameterType = TYPE:Queue
+                OF MANGLECODE:Report
+                    q.ParameterType = TYPE:Report
+                OF MANGLECODE:Window
+                    q.ParameterType = TYPE:Window
+                OF MANGLECODE:View
+                    q.ParameterType = TYPE:View
+                OF MANGLECODE:Application
+                    q.ParameterType = TYPE:Application
+                OF MANGLECODE:Byte
+                    q.ParameterType = TYPE:Byte
+                OF MANGLECODE:Ushort
+                    q.ParameterType = TYPE:Ushort
+                OF MANGLECODE:Ulong
+                    q.ParameterType = TYPE:Ulong
+                OF MANGLECODE:Date
+                    q.ParameterType = TYPE:Date
+                OF MANGLECODE:Time
+                    q.ParameterType = TYPE:Time
+                OF MANGLECODE:Bfloat4
+                    q.ParameterType = TYPE:Bfloat4
+                OF MANGLECODE:Bfloat8
+                    q.ParameterType = TYPE:Bfloat8
+                OF MANGLECODE:String
+                    q.ParameterType = TYPE:String
+                OF MANGLECODE:Pstring
+                    q.ParameterType = TYPE:Pstring
+                OF MANGLECODE:Cstring
+                    q.ParameterType = TYPE:Cstring
+                OF MANGLECODE:Short
+                    q.ParameterType = TYPE:Short
+                OF MANGLECODE:Long
+                    q.ParameterType = TYPE:Long
+                OF MANGLECODE:Sreal
+                    q.ParameterType = TYPE:Sreal
+                OF MANGLECODE:Real
+                    q.ParameterType = TYPE:Real
+                OF MANGLECODE:Decimal
+                    q.ParameterType = TYPE:Decimal
+                OF MANGLECODE:Pdecimal
+                    q.ParameterType = TYPE:Pdecimal
+                OF MANGLECODE:CstringRaw
+                    q.ParameterType = TYPE:CstringRaw
+                OF MANGLECODE:GroupRaw
+                    q.ParameterType = TYPE:GroupRaw
+                OF MANGLECODE:Group
+                    q.ParameterType = TYPE:Group
+                OF MANGLECODE:Any
+                    q.ParameterType = TYPE:Any
+                OF MANGLECODE:Function
+                    q.ParameterType = TYPE:Function
+                OF MANGLECODE:FunctionEnd
+                    q.ParameterType = TYPE:FunctionEnd
+                ELSE
+                    q.ParameterType = Token
                 END
+                ParseState = PARSESTATE:ParameterDone
+                CYCLE
                 
             OF PARSESTATE:ParameterDone
+                q.ParameterName = 'ParameterExpression' & ParameterCounter
                 ADD(q)
-                ParseState = PARSESTATE:ParameterInit
+                ParameterCounter += 1
+                ParseState        = PARSESTATE:ParameterInit
             END
             
             Token = SELF.GetToken()
@@ -283,4 +401,16 @@ PARSESTATE:UserTypePrefix   EQUATE
         END
         RETURN(ReturnValue)
         
+ExpParser.IsTokenPreamble   PROCEDURE(STRING Token)
+ReturnValue                     BOOL
+
+    CODE
+        ReturnValue = FALSE
+        CASE Token
+        OF MANGLECODE:PassByRef
+        OROF MANGLECODE:PassByRefOptional
+        OROF MANGLECODE:Optional
+            ReturnValue = TRUE
+        END
+        RETURN(ReturnValue)
         
