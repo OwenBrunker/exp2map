@@ -97,6 +97,7 @@ ReturnToken             STRING(10)
 
 
     MAP
+TestWindow          PROCEDURE()
     END
 
 
@@ -117,9 +118,50 @@ IsTokenPreamble         PROCEDURE(STRING Token),BOOL
 
 
   CODE
-
+        TestWindow()
         
+TestWindow          PROCEDURE()
 
+ExportString            STRING(2048)
+
+qParameters             QUEUE(TYPE_TypesQueue).
+
+
+Window                  WINDOW('Caption'),AT(,,371,252),GRAY,FONT('Segoe UI',9)
+                            PROMPT('Export String:'),AT(2,20),USE(?ExportString:PROMPT)
+                            TEXT,AT(47,18,322,10),USE(ExportString),SINGLE
+                            PROMPT('Only include the portion of the export string after @F'),AT(46,34,323), |
+                                USE(?PROMPT2)
+                            BUTTON('Parse'),AT(46,47,35),USE(?Parse)
+                            LIST,AT(47,71,322,159),USE(?LIST:Parameters),FROM(qParameters), |
+                                FORMAT('73L(2)|M~Type~87L(2)|M~Name~38L(2)|M~Is Optional~@N01@41' & |
+                                'L(2)|M~Is Reference~@N01@20L(2)|M~Is Optional Reference~@N01@')
+                            BUTTON('Close'),AT(46,234),USE(?Close)
+                        END
+
+parser                  ExpParser
+
+    CODE
+        OPEN(Window)
+        ACCEPT
+            CASE FIELD()
+            OF 0
+            OF ?Parse
+                CASE EVENT()
+                OF EVENT:Accepted
+                    Parser.Parse(ExportString, qParameters)
+                    DISPLAY()
+                END
+                
+            OF ?Close
+                CASE EVENT()
+                OF EVENT:Accepted
+                   POST(EVENT:CloseWindow) 
+                END
+            END
+            
+        END
+        CLOSE(Window)    
 
 ExpParser.Construct PROCEDURE()
     CODE
@@ -150,7 +192,8 @@ ParameterCounter        LONG
         SELF.ExpStringLength = LEN(CLIP(SELF.ExpString))
         SELF.CharacterIndex  = 0
         ParameterCounter     = 0
-        
+        ParseState           = PARSESTATE:ParameterInit
+
         Token = SELF.GetToken()
         LOOP WHILE Token <> ''
 
@@ -390,7 +433,7 @@ PARSESTATE:UserTypePrefix   EQUATE
                     ! Clarion strings are one based arrays
                     ! We have read past the size parameter, so we need to keep the current character position for the next state
                     UserTypeLength = SELF.ExpString[ (CharacterIndexStart +1) : SELF.CharacterIndex ]
-                    ReturnValue    = SELF.ExpString[ SELF.CharacterIndex +1 :  SELF.CharacterIndex + UserTypeLength +1]
+                    ReturnValue    = SELF.ExpString[ SELF.CharacterIndex +1 :  SELF.CharacterIndex + UserTypeLength]
                     SELF.CharacterIndex += UserTypeLength
                     BREAK
                 END

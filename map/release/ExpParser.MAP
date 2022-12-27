@@ -1,0 +1,80 @@
+  401078     1960 Code                EXPPARSER_TEXT
+  4029D8       23 Code                IEXE32_TEXT
+  4029FC       22 Code                INIT_TEXT
+  403000      1FB Initialized Data    EXPPARSER_CONST
+  4031FC       F4 Initialized Data    EXPPARSER_DATA
+  4032F0       44 Initialized Data    IEXE32_DATA
+  403334        0 Initialized Data    __CPPINI_CONS
+  403334       1C Initialized Data    __CPPINI_CONST
+  403350        4 Initialized Data    __CPPINI_END
+  403354        0 Initialized Data    __INIVMT_CONS
+  403354        8 Initialized Data    __INIVMT_CONST
+  40335C        0 Initialized Data    __INIVMT_CONST_END
+  403360        C Un-initialized Data EXPPARSER_BSS
+  404000        8 __T_L_S__DAT
+  404008        0 __T_L_S__DATA_END
+  404010        0 __T_L_S__BS
+  404010        0 __T_L_S__BSS_END
+
+  401078 _main
+  401084 ISTOKENPREAMBLE@F9EXPPARSERsb
+  40110C GETTOKEN@F9EXPPARSER
+  401E64 PARSE@F9EXPPARSERRsb15TYPE_TYPESQUEUE
+  402864 DESTRUCT@F9EXPPARSER
+  402874 CONSTRUCT@F9EXPPARSER
+  402878 TESTWINDOW@F
+  4031FC TYPE$TYPE_TOKENSQUEUE
+  403228 TCB$TYPE_TOKENSQUEUE
+  4032A4 TYPE$EXPPARSER
+  4032E4 VMT$EXPPARSER
+  403354 VMTP$EXPPARSER
+  403360 $TYPE_TOKENSQUEUE
+  405000 __import_section_start
+  40548C __import_section_end
+
+Imports
+ClaRUN.dll:Cla$ADDqueue 4050D0
+ClaRUN.dll:Cla$AssignRefUfo 4050D4
+ClaRUN.dll:Cla$CLEAR 4050D8
+ClaRUN.dll:Cla$clearstr 4050DC
+ClaRUN.dll:Cla$CLOSEwindow 4050E0,401000
+ClaRUN.dll:Cla$code 4050E4
+ClaRUN.dll:Cla$comparestr 4050E8
+ClaRUN.dll:Cla$DISPLAY 4050EC,401008
+ClaRUN.dll:Cla$DPopLong 4050F0
+ClaRUN.dll:Cla$EndEventLoop 4050F4
+ClaRUN.dll:Cla$EVENT 4050F8,401010
+ClaRUN.dll:Cla$FIELD 4050FC,401018
+ClaRUN.dll:Cla$FREEqueue 405100
+ClaRUN.dll:Cla$FREEqueuea 405104,401020
+ClaRUN.dll:Cla$freestr 405108
+ClaRUN.dll:Cla$FreeUfo 40510C
+ClaRUN.dll:Cla$freewindow 405110
+ClaRUN.dll:Cla$MessageBox 405114,401028
+ClaRUN.dll:Cla$OPENwindow 405118,401030
+ClaRUN.dll:Cla$PopString 40511C
+ClaRUN.dll:Cla$PopTemp 405120
+ClaRUN.dll:Cla$POST 405124,401038
+ClaRUN.dll:Cla$PushLong 405128
+ClaRUN.dll:Cla$PushNull 40512C
+ClaRUN.dll:Cla$PushString 405130
+ClaRUN.dll:Cla$PushUfo 405134
+ClaRUN.dll:Cla$pwopen 405138,401040
+ClaRUN.dll:Cla$Stack2DStack 40513C
+ClaRUN.dll:Cla$Stack2Ufo 405140
+ClaRUN.dll:Cla$StackCLIP 405144,401048
+ClaRUN.dll:Cla$StackConcat 405148
+ClaRUN.dll:Cla$StackHeap 40514C
+ClaRUN.dll:Cla$StackLen 405150,401050
+ClaRUN.dll:Cla$StackSUB 405154,401058
+ClaRUN.dll:Cla$StartEventLoop 405158
+ClaRUN.dll:Cla$storestr 40515C
+ClaRUN.dll:_exit 405160,401060
+ClaRUN.dll:_free 405164
+ClaRUN.dll:_malloc 405168
+ClaRUN.dll:__sysinit 40516C,401068
+ClaRUN.dll:__sysstart 405170,401070
+
+
+
+Entry Point:   4029D8
