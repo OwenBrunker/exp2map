@@ -1,16 +1,16 @@
-  4010A8     1F6E Code                EXPPARSER_TEXT
-  403018       23 Code                IEXE32_TEXT
-  40303C       4F Code                INIT_TEXT
-  404000      21A Initialized Data    EXPPARSER_CONST
-  40421C      10C Initialized Data    EXPPARSER_DATA
-  404328       44 Initialized Data    IEXE32_DATA
-  40436C        0 Initialized Data    __CPPINI_CONS
-  40436C       1C Initialized Data    __CPPINI_CONST
-  404388        4 Initialized Data    __CPPINI_END
-  40438C        0 Initialized Data    __INIVMT_CONS
-  40438C        8 Initialized Data    __INIVMT_CONST
-  404394        0 Initialized Data    __INIVMT_CONST_END
-  4043A0        C Un-initialized Data EXPPARSER_BSS
+  4010A8     1F9A Code                EXPPARSER_TEXT
+  403044       23 Code                IEXE32_TEXT
+  403068       4F Code                INIT_TEXT
+  404000      206 Initialized Data    EXPPARSER_CONST
+  404208      114 Initialized Data    EXPPARSER_DATA
+  40431C       44 Initialized Data    IEXE32_DATA
+  404360        0 Initialized Data    __CPPINI_CONS
+  404360       1C Initialized Data    __CPPINI_CONST
+  40437C        4 Initialized Data    __CPPINI_END
+  404380        0 Initialized Data    __INIVMT_CONS
+  404380        8 Initialized Data    __INIVMT_CONST
+  404388        0 Initialized Data    __INIVMT_CONST_END
+  404390        C Un-initialized Data EXPPARSER_BSS
   405000        8 __T_L_S__DAT
   405008        0 __T_L_S__DATA_END
   405010        0 __T_L_S__BS
@@ -21,15 +21,15 @@
   401338 ISTOKENPREAMBLE@F9EXPPARSERsb
   4013DC GETTOKEN@F9EXPPARSER
   402210 PARSE@F9EXPPARSERRsb15TYPE_TYPESQUEUE
-  402CF0 DESTRUCT@F9EXPPARSER
-  402D24 CONSTRUCT@F9EXPPARSER
-  402D44 TESTWINDOW@F
-  40421C TYPE$TYPE_TOKENSQUEUE
-  404248 TCB$TYPE_TOKENSQUEUE
-  4042DC TYPE$EXPPARSER
-  40431C VMT$EXPPARSER
-  40438C VMTP$EXPPARSER
-  4043A0 $TYPE_TOKENSQUEUE
+  402D1C DESTRUCT@F9EXPPARSER
+  402D50 CONSTRUCT@F9EXPPARSER
+  402D70 TESTWINDOW@F
+  404208 TYPE$TYPE_TOKENSQUEUE
+  404234 TCB$TYPE_TOKENSQUEUE
+  4042D0 TYPE$EXPPARSER
+  404310 VMT$EXPPARSER
+  404380 VMTP$EXPPARSER
+  404390 $TYPE_TOKENSQUEUE
   406000 __import_section_start
   406568 __import_section_end
 
@@ -86,4 +86,4 @@ ClaRUN.dll:__sysstart 4061B0,4010A0
 
 
 
-Entry Point:   403018
+Entry Point:   403044

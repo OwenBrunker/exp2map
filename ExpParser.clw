@@ -89,6 +89,7 @@ ParameterName           STRING(255)
 IsOptionalYN            BOOL   ! O
 IsReferenceYN           BOOL   ! R
 IsOptionalReferenceYN   BOOL   ! P
+IsRaw                   BOOL   ! Applies to cstrings, and groups
 ArrayCount              BYTE   ! A
 ProtoType               STRING(255)
                     END
@@ -130,17 +131,19 @@ ExportString            STRING(2048)
 qParameters             QUEUE(TYPE_TypesQueue).
 
 
-Window                  WINDOW('EXP to MAP'),AT(,,371,252),GRAY,FONT('Segoe UI',9),SYSTEM,ICON(ICON:Thumbnail)
+Window                  WINDOW('EXP to MAP'),AT(,,371,252),GRAY,SYSTEM,ICON(ICON:Thumbnail), |
+                            FONT('Segoe UI',9)
                             PROMPT('Export String:'),AT(2,18),USE(?ExportString:PROMPT)
                             TEXT,AT(47,18,303,10),USE(ExportString),SINGLE
                             BUTTON,AT(355,18,10,10),USE(?ExpPasteBtn),SKIP,ICON(ICON:Paste), |
-                                        TIP('Paste clipboard into Export String')
+                                TIP('Paste clipboard into Export String')
                             PROMPT('Only include the portion of the export string after @F'),AT(46,34,323), |
                                 USE(?PROMPT2)
                             BUTTON('Parse'),AT(46,47,35),USE(?Parse)
-        LIST,AT(2,71,362,159),USE(?LIST:Parameters),FROM(qParameters),FORMAT('61L(2)|M~Type~82L(2)|M' & |
-                '~Name~36C|M~<<Optional>~@N1b@40C|M~*Reference~@N1b@44C|M~<<*Reference>~@N1b@20L(5)|' & |
-                'M~Array~C(0)@N2b@80L(2)|M~Prototype~')                
+                            LIST,AT(2,71,362,159),USE(?LIST:Parameters),FROM(qParameters), |
+                                FORMAT('61L(2)|M~Type~82L(2)|M~Name~36C|M~<<Optional>~@N1b@40C|M' & |
+                                '~*Reference~@N1b@44C|M~<<*Reference>~@N1b@44C|M~Raw~@N1b@20L(5)' & |
+                                '|M~Array~C(0)@N2b@80L(2)|M~Prototype~')
                             BUTTON('Close'),AT(46,234),USE(?Close)
                         END
 
@@ -221,6 +224,7 @@ ParameterCounter        LONG
                 q.IsOptionalYN           = False
                 q.IsReferenceYN          = False
                 q.IsOptionalReferenceYN  = False
+                q.IsRaw                  = False
                 q.ArrayCount             = 0
                 q.Prototype              = ''  !Carl asks: should this be CLEAR(Q) so if new field is added its cleared ?
                                                !Owen:      Yes it should be a CLEAR(Q).  I did it this way to make it obvious when those flags are getting reset.
@@ -256,66 +260,40 @@ ParameterCounter        LONG
 
             OF PARSESTATE:ParameterType
                 CASE Token
-                OF MANGLECODE:File
-                    q.ParameterType = TYPE:File
-                OF MANGLECODE:Blob
-                    q.ParameterType = TYPE:Blob
-                OF MANGLECODE:Key
-                    q.ParameterType = TYPE:Key
-                OF MANGLECODE:Queue
-                    q.ParameterType = TYPE:Queue
-                OF MANGLECODE:Report
-                    q.ParameterType = TYPE:Report
-                OF MANGLECODE:Window
-                    q.ParameterType = TYPE:Window
-                OF MANGLECODE:View
-                    q.ParameterType = TYPE:View
-                OF MANGLECODE:Application
-                    q.ParameterType = TYPE:Application
-                OF MANGLECODE:Byte
-                    q.ParameterType = TYPE:Byte
-                OF MANGLECODE:Ushort
-                    q.ParameterType = TYPE:Ushort
-                OF MANGLECODE:Ulong
-                    q.ParameterType = TYPE:Ulong
-                OF MANGLECODE:Date
-                    q.ParameterType = TYPE:Date
-                OF MANGLECODE:Time
-                    q.ParameterType = TYPE:Time
-                OF MANGLECODE:Bfloat4
-                    q.ParameterType = TYPE:Bfloat4
-                OF MANGLECODE:Bfloat8
-                    q.ParameterType = TYPE:Bfloat8
-                OF MANGLECODE:String
-                    q.ParameterType = TYPE:String
-                OF MANGLECODE:Pstring
-                    q.ParameterType = TYPE:Pstring
-                OF MANGLECODE:Cstring
-                    q.ParameterType = TYPE:Cstring
-                OF MANGLECODE:Short
-                    q.ParameterType = TYPE:Short
-                OF MANGLECODE:Long
-                    q.ParameterType = TYPE:Long
-                OF MANGLECODE:Sreal
-                    q.ParameterType = TYPE:Sreal
-                OF MANGLECODE:Real
-                    q.ParameterType = TYPE:Real
-                OF MANGLECODE:Decimal
-                    q.ParameterType = TYPE:Decimal
-                OF MANGLECODE:Pdecimal
-                    q.ParameterType = TYPE:Pdecimal
+                OF MANGLECODE:File;        q.ParameterType = TYPE:File
+                OF MANGLECODE:Blob;        q.ParameterType = TYPE:Blob
+                OF MANGLECODE:Key;         q.ParameterType = TYPE:Key
+                OF MANGLECODE:Queue;       q.ParameterType = TYPE:Queue
+                OF MANGLECODE:Report;      q.ParameterType = TYPE:Report
+                OF MANGLECODE:Window;      q.ParameterType = TYPE:Window
+                OF MANGLECODE:View;        q.ParameterType = TYPE:View
+                OF MANGLECODE:Application; q.ParameterType = TYPE:Application
+                OF MANGLECODE:Byte;        q.ParameterType = TYPE:Byte
+                OF MANGLECODE:Ushort;      q.ParameterType = TYPE:Ushort
+                OF MANGLECODE:Ulong;       q.ParameterType = TYPE:Ulong
+                OF MANGLECODE:Date;        q.ParameterType = TYPE:Date
+                OF MANGLECODE:Time;        q.ParameterType = TYPE:Time
+                OF MANGLECODE:Bfloat4;     q.ParameterType = TYPE:Bfloat4
+                OF MANGLECODE:Bfloat8;     q.ParameterType = TYPE:Bfloat8
+                OF MANGLECODE:String;      q.ParameterType = TYPE:String
+                OF MANGLECODE:Pstring;     q.ParameterType = TYPE:Pstring
+                OF MANGLECODE:Cstring;     q.ParameterType = TYPE:Cstring
+                OF MANGLECODE:Short;       q.ParameterType = TYPE:Short
+                OF MANGLECODE:Long;        q.ParameterType = TYPE:Long
+                OF MANGLECODE:Sreal;       q.ParameterType = TYPE:Sreal
+                OF MANGLECODE:Real;        q.ParameterType = TYPE:Real
+                OF MANGLECODE:Decimal;     q.ParameterType = TYPE:Decimal
+                OF MANGLECODE:Pdecimal;    q.ParameterType = TYPE:Pdecimal
                 OF MANGLECODE:CstringRaw
-                    q.ParameterType = TYPE:CstringRaw
+                    q.ParameterType = TYPE:Cstring
+                    q.IsRaw         = True
                 OF MANGLECODE:GroupRaw
-                    q.ParameterType = TYPE:GroupRaw
-                OF MANGLECODE:Group
                     q.ParameterType = TYPE:Group
-                OF MANGLECODE:Any
-                    q.ParameterType = TYPE:Any
-                OF MANGLECODE:Function
-                    q.ParameterType = TYPE:Function
-                OF MANGLECODE:FunctionEnd
-                    q.ParameterType = TYPE:FunctionEnd
+                    q.IsRaw         = True
+                OF MANGLECODE:Group;       q.ParameterType = TYPE:Group
+                OF MANGLECODE:Any;         q.ParameterType = TYPE:Any
+                OF MANGLECODE:Function;    q.ParameterType = TYPE:Function
+                OF MANGLECODE:FunctionEnd; q.ParameterType = TYPE:FunctionEnd
                 ELSE
                     q.ParameterType = Token
                 END
