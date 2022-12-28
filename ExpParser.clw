@@ -13,6 +13,7 @@ OMIT('***')
 MANGLECODE:PassByRef  			 EQUATE('R')
 MANGLECODE:PassByRefOptional     EQUATE('P')
 MANGLECODE:Optional   			 EQUATE('O')
+MANGLECODE:Array                 EQUATE('A')    !Array after RPO. Can occur multiple times, once for each dim so AA=[,]
 MANGLECODE:EntityPrefix          EQUATE('B')
 MANGLECODE:UnsignedPrefix        EQUATE('U')
 MANGLECODE:Complex               EQUATE('b')
@@ -88,6 +89,8 @@ ParameterName           STRING(255)
 IsOptionalYN            BOOL   ! O
 IsReferenceYN           BOOL   ! R
 IsOptionalReferenceYN   BOOL   ! P
+ArrayCount              BYTE   ! A
+ProtoType               STRING(255)
                     END
 
 TYPE_TokensQueue    QUEUE
@@ -112,7 +115,7 @@ Destruct                PROCEDURE()
 Destroy                 PROCEDURE()
 Parse                   PROCEDURE(*STRING ExpString, *TYPE_TypesQueue q)
 GetToken                PROCEDURE(),STRING
-IsTokenPreamble         PROCEDURE(STRING Token),BOOL
+IsTokenPreamble         PROCEDURE(STRING Token),BOOL    !Token is R,P,O = *XXX <*XX> <XXX>
                     END
 
 
@@ -121,21 +124,22 @@ IsTokenPreamble         PROCEDURE(STRING Token),BOOL
         TestWindow()
         
 TestWindow          PROCEDURE()
-
+AT_Pos                  LONG
 ExportString            STRING(2048)
-
 qParameters             QUEUE(TYPE_TypesQueue).
 
 
-Window                  WINDOW('Caption'),AT(,,371,252),GRAY,FONT('Segoe UI',9)
-                            PROMPT('Export String:'),AT(2,20),USE(?ExportString:PROMPT)
-                            TEXT,AT(47,18,322,10),USE(ExportString),SINGLE
+Window                  WINDOW('EXP to MAP'),AT(,,371,252),GRAY,FONT('Segoe UI',9),SYSTEM,ICON(ICON:Thumbnail)
+                            PROMPT('Export String:'),AT(2,18),USE(?ExportString:PROMPT)
+                            TEXT,AT(47,18,303,10),USE(ExportString),SINGLE
+                            BUTTON,AT(355,18,10,10),USE(?ExpPasteBtn),SKIP,ICON(ICON:Paste), |
+                                        TIP('Paste clipboard into Export String')
                             PROMPT('Only include the portion of the export string after @F'),AT(46,34,323), |
                                 USE(?PROMPT2)
                             BUTTON('Parse'),AT(46,47,35),USE(?Parse)
-                            LIST,AT(47,71,322,159),USE(?LIST:Parameters),FROM(qParameters), |
-                                FORMAT('73L(2)|M~Type~87L(2)|M~Name~38L(2)|M~Is Optional~@N01@41' & |
-                                'L(2)|M~Is Reference~@N01@20L(2)|M~Is Optional Reference~@N01@')
+        LIST,AT(2,71,362,159),USE(?LIST:Parameters),FROM(qParameters),FORMAT('61L(2)|M~Type~82L(2)|M' & |
+                '~Name~36C|M~<<Optional>~@N1b@40C|M~*Reference~@N1b@44C|M~<<*Reference>~@N1b@20L(5)|' & |
+                'M~Array~C(0)@N2b@80L(2)|M~Prototype~')                
                             BUTTON('Close'),AT(46,234),USE(?Close)
                         END
 
@@ -146,6 +150,16 @@ parser                  ExpParser
         ACCEPT
             CASE FIELD()
             OF 0
+            OF ?ExpPasteBtn ; IF ~CLIPBOARD() THEN CYCLE. 
+                              ExportString=CLIPBOARD() ; DISPLAY
+                              POST(EVENT:Accepted,?ExportString)
+            OF ?ExportString
+               AT_Pos=INSTRING('@F',ExportString,1)   !Did they paste the Function@F 
+               IF AT_Pos THEN ExportString=SUB(ExportString,AT_Pos+2,9999). !Start after @F
+               AT_Pos=INSTRING(' @?',ExportString,1)  !Did they paste EXP Line with @?
+               IF AT_Pos THEN ExportString=SUB(ExportString,1,AT_Pos-1).    !Cutoff @?
+               DISPLAY 
+
             OF ?Parse
                 CASE EVENT()
                 OF EVENT:Accepted
@@ -179,7 +193,8 @@ Token                   STRING(255)
 ParseState              LONG
                         ITEMIZE
 PARSESTATE:ParameterInit     EQUATE
-PARSESTATE:ParameterPreamble EQUATE
+PARSESTATE:ParameterPreamble EQUATE     !ROP for R=*XXXX  P=<*XXX>  O=<OOO>
+PARSESTATE:ParameterARRAY    EQUATE     !AAA for Array[,,] always with R or P
 PARSESTATE:ParameterType     EQUATE
 PARSESTATE:ParameterDone     EQUATE
                         END
@@ -201,9 +216,11 @@ ParameterCounter        LONG
             OF PARSESTATE:ParameterInit
                 q.ParameterType          = ''
                 q.ParameterName          = ''
-                q.IsOptionalYN           = ''
-                q.IsReferenceYN          = ''
-                q.IsOptionalReferenceYN  = ''
+                q.IsOptionalYN           = False
+                q.IsReferenceYN          = False
+                q.IsOptionalReferenceYN  = False
+                q.ArrayCount             = 0
+                q.Prototype              = ''  !Carl asks: should this be CLEAR(Q) so if new field is added its cleared ?
                 IF SELF.IsTokenPreamble(Token)
                     ParseState = PARSESTATE:ParameterPreamble
                     CYCLE
@@ -222,8 +239,18 @@ ParameterCounter        LONG
                     q.IsOptionalReferenceYN = TRUE
                 END
                 
-                ParseState = PARSESTATE:ParameterType
-                
+                ParseState = PARSESTATE:ParameterARRAY  !Carl was: PARSESTATE:ParameterType
+
+            OF PARSESTATE:ParameterARRAY        !AAA always after ROP
+                CASE Token
+                OF MANGLECODE:Array
+                   q.ArrayCount += 1  !Increment ARRAY
+                   !Fall thru for next GetToken could be more 'A' 
+                ELSE
+                   ParseState = PARSESTATE:ParameterType   !No more AAA so move to Param Types
+                   CYCLE                                   !We have a Token that must be processed as a Param Type
+                END
+
             OF PARSESTATE:ParameterType
                 CASE Token
                 OF MANGLECODE:File
@@ -293,9 +320,24 @@ ParameterCounter        LONG
                 CYCLE
                 
             OF PARSESTATE:ParameterDone
-                q.ParameterName = 'ParameterExpression' & ParameterCounter
-                ADD(q)
                 ParameterCounter += 1
+                q.ParameterName = 'ParameterExpression' & ParameterCounter
+
+                q.ProtoType = q.ParameterType                                           !Prototype=TYPE
+                IF q.ArrayCount THEN
+                   q.ProtoType=CLIP(q.ProtoType) &'[' & ALL(',',q.ArrayCount-1) & ']'   !Add Array=TYPE[]
+                END
+                q.ProtoType=CLIP(q.ProtoType) &' Parm_' & ParameterCounter              !Add Parm=TYPE[] Parm_#
+                IF q.IsReferenceYN THEN
+                   q.ProtoType='*' & q.ProtoType                                        !Add *Ref=*TYPE[] Parm_#
+                ELSIF q.IsOptionalYN THEN
+                   q.ProtoType='<<' & CLIP(q.ProtoType) &'>'                            !Add <Omit>=<TYPE[] Parm_#>
+                ELSIF q.IsOptionalReferenceYN THEN
+                   q.ProtoType='<<*' & CLIP(q.ProtoType) &'>'                           !Add <*Omit>=<*TYPE[] Parm_#>
+                END
+
+                ADD(q)
+                
                 ParseState        = PARSESTATE:ParameterInit
             END
             
@@ -341,6 +383,7 @@ PARSESTATE:UserTypePrefix   EQUATE
                 OF MANGLECODE:PassByRef
                 OROF MANGLECODE:PassByRefOptional
                 OROF MANGLECODE:Optional
+                OROF MANGLECODE:Array
                 OROF MANGLECODE:Long
                 OROF MANGLECODE:Sreal
                 OROF MANGLECODE:Real
@@ -444,7 +487,7 @@ PARSESTATE:UserTypePrefix   EQUATE
         END
         RETURN(ReturnValue)
         
-ExpParser.IsTokenPreamble   PROCEDURE(STRING Token)
+ExpParser.IsTokenPreamble   PROCEDURE(STRING Token)     !Token is R,P,O = *XXX <*XX> <XXX>
 ReturnValue                     BOOL
 
     CODE
