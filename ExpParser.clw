@@ -163,15 +163,19 @@ Window                  WINDOW('EXP to MAP'),AT(,,371,202),GRAY,SYSTEM,ICON(ICON
                  '36C|M~<<*Ref Opt>~@N1b@'   &|
                  '20C|M~Raw~@N1b@'           &|
                  '20L(5)|M~Array~C(0)@N2b@'  &|
-                 '80L(2)|M~Prototype~'      )    
+                 '80L(2)~Prototype~'       )
                             BUTTON('Cl&ose'),AT(93,47,35),USE(?Close)
+                            BUTTON('Re-Run'),AT(330,47,35),USE(?ReRun),TIP('Run another instance')
                         END
 
 parser                  ExpParser
 
     CODE
-! (<*LONG[,] A2dim>,LONG SheetFEQ,BOOL Wrap=0,STRING S1,*STRING S2,<STRING S3>,<*STRING S4>)
-! ExportString='PAAlllsbRsbOsbPsb'   test data
+! ExportString='PAAlllsbRsbOsbPsb' !test:  (<*LONG[,] A2dim>,LONG SheetFEQ,BOOL Wrap=0,STRING S1,*STRING S2,<STRING S3>,<*STRING S4>)
+! ExportString='BwBrBfBbBkBqBiBa'  !test:  (*WINDOW W1,*REPORT R1>,FILE F1,BLOB B1,KEY K1,QUEUE Q1,VIEW V1,APPLICATION A1)  
+! ExportString='Bqg'              !test:  (QUEUE Q1,GROUP G1)
+! ExportString='5MYQUE7MYGROUP'    !test:  (MyQue Q1,MyGroup G1)       Named Types
+
         SYSTEM{PROP:MsgModeDefault}=MSGMODE:CANCOPY
         SYSTEM{PROP:PropVScroll}=1
         OPEN(Window)
@@ -196,7 +200,9 @@ parser                  ExpParser
                 DISPLAY()
                 
             OF ?Close
-                POST(EVENT:CloseWindow) 
+                POST(EVENT:CloseWindow)
+            OF ?ReRun
+                RUN(COMMAND('0'))
             END
         END
         CLOSE(Window)    
@@ -237,6 +243,7 @@ PARSESTATE:ParameterType     EQUATE
 PARSESTATE:ParameterDone     EQUATE
                         END
 ParameterCounter        LONG
+ParameterStartPos       LONG
     CODE
         SELF.ExpString &= ExpString
         FREE(q)
@@ -245,7 +252,8 @@ ParameterCounter        LONG
         SELF.ExpStringLength = LEN(CLIP(SELF.ExpString))
         SELF.CharacterIndex  = 0
         ParameterCounter     = 0
-        ParseState           = PARSESTATE:ParameterInit
+        ParseState           = PARSESTATE:ParameterInit     !Suggest DO SetStateForNextParameterRtn
+        ParameterStartPos    = 1
 
         Token = SELF.GetToken()
         LOOP WHILE Token <> ''
@@ -253,7 +261,7 @@ ParameterCounter        LONG
             CASE ParseState
             OF PARSESTATE:ParameterInit
                 CLEAR(q)                            ! What is really happening
-                q.TokenStartPos          = SELF.CharacterIndex
+                q.TokenStartPos          = 0        ! Will be set =ParameterStartPos later
                 q.TokenLength            = 0
                 q.Tokens                 = '?'
                 q.ParameterType          = 'unknown'
@@ -332,7 +340,7 @@ ParameterCounter        LONG
                 OF MANGLECODE:Function;    q.ParameterType = TYPE:Function
                 OF MANGLECODE:FunctionEnd; q.ParameterType = TYPE:FunctionEnd
                 ELSE
-                    q.ParameterType = Token
+                    q.ParameterType = Token     !Likely a Named Type e.g. Exp=5MYQUE is MapParm=MYQUE
                 END
                 ParseState = PARSESTATE:ParameterDone
                 CYCLE
@@ -341,15 +349,23 @@ ParameterCounter        LONG
                 ParameterCounter += 1
                 q.ParameterName   = 'Parm_' & ParameterCounter 
                 q.ProtoType       = SELF.BuildPrototype(q.ParameterType, q.ParameterName, q.IsReferenceYN, q.IsOptionalYN, q.IsOptionalReferenceYN, q.ArrayCount)
+                q.TokenStartPos   = ParameterStartPos
                 q.TokenLength     = SELF.CharacterIndex + 1 - q.TokenStartPos
                 q.Tokens          = SUB(SELF.ExpString,q.TokenStartPos,q.TokenLength)
                 ADD(q)
                 
-                ParseState        = PARSESTATE:ParameterInit
+                ParseState        = PARSESTATE:ParameterInit    !Suggest DO SetStateForNextParameterRtn so Q is cleared and ready to go
+                ParameterStartPos = SELF.CharacterIndex + 1
             END
             
             Token = SELF.GetToken()
         END
+
+!Suggest Q Init code should be in a ROUTINE that is DO instead of "ParseState = PARSESTATE:ParameterInit" in 2 placesss0 Q is ready to go
+!!!SetStateForNextParameterRtn ROUTINE     !Because GetToken() takes tokens off the input want Q ready to go 
+!!!     ParseState = PARSESTATE:ParameterInit
+!!!     CLEAR(q)
+!!!     q.Xxxx =     etc
 
 
 ExpParser.GetToken  PROCEDURE()
@@ -430,7 +446,7 @@ PARSESTATE:UserTypePrefix   EQUATE
                         BREAK
                     ELSE
                         MESSAGE('Unexpected character for Entity' & |
-                                ' "'& SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
+                                ' "'& CLIP(ReturnValue) & SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
                                 '||PARSESTATE:DefinedMultiCharacter','ExpParser.GetToken')
                         BREAK
                     END
@@ -445,7 +461,7 @@ PARSESTATE:UserTypePrefix   EQUATE
                         BREAK
                     ELSE
                         MESSAGE('Unexpected character for Unsigned' & |
-                                ' "'& SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
+                                ' "'& CLIP(ReturnValue) & SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
                                 '||MANGLECODE:UnsignedPrefix','ExpParser.GetToken')
                         BREAK
                     END
@@ -461,7 +477,7 @@ PARSESTATE:UserTypePrefix   EQUATE
                         BREAK
                     ELSE
                         MESSAGE('Unexpected character for Complex' & |
-                                ' "'& SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
+                                ' "'& CLIP(ReturnValue) & SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
                                 '||MANGLECODE:Complex','ExpParser.GetToken')
                         BREAK
                     END
