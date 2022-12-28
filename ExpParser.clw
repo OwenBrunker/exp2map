@@ -7,12 +7,16 @@ OMIT('***')
  * Date: 23/12/22
  * Time: 4:40 PM
  * 
- * To change this template use Tools | Options | Coding | Edit Standard Headers.
- ***
+ * History =========================================================================================
+ * 2022-12-27 Owen  see GitHub
+ * 2022-12-28 Carl  Add ProtoMapString with all parameters as seen in MAP. 
+ *                  Queue add Token Position and Tokens to understand how it was parsed apart
+ ***      !=========================================================================================
 
-MANGLECODE:PassByRef  			 EQUATE('R')
+!Region Equates
+MANGLECODE:PassByRef             EQUATE('R')
 MANGLECODE:PassByRefOptional     EQUATE('P')
-MANGLECODE:Optional   			 EQUATE('O')
+MANGLECODE:Optional              EQUATE('O')
 MANGLECODE:Array                 EQUATE('A')    !Array after RPO. Can occur multiple times, once for each dim so AA=[,]
 MANGLECODE:EntityPrefix          EQUATE('B')
 MANGLECODE:UnsignedPrefix        EQUATE('U')
@@ -81,9 +85,13 @@ TYPE:Group                  EQUATE('GROUP')
 TYPE:Any                    EQUATE('ANY')
 TYPE:Function               EQUATE('FUNCTION')
 TYPE:FunctionEnd            EQUATE('FUNCTIONEND')
+!EndRegion Equates
 
-
+!Region QUEUEs
 TYPE_TypesQueue     QUEUE,TYPE
+TokenStartPos           USHORT          !SUB(Input, StartPos
+TokenLength             USHORT          !SUB(Input, StartPos, Length)
+Tokens                  STRING(255)
 ParameterType           STRING(255)
 ParameterName           STRING(255)
 IsOptionalYN            BOOL   ! O
@@ -98,7 +106,7 @@ TYPE_TokensQueue    QUEUE
 ScanToken               STRING(2)
 ReturnToken             STRING(10)
                     END
-
+!EndRegion QUEUEs
 
     MAP
 TestWindow          PROCEDURE()
@@ -128,43 +136,63 @@ BuildPrototype          PROCEDURE(STRING ParameterType, STRING ParameterName, BO
 TestWindow          PROCEDURE()
 AT_Pos                  LONG
 ExportString            STRING(2048)
+ProtoMapString             STRING(2048)            !Prototype of all parameters in Queue e.g. (<LONG P1>)
 qParameters             QUEUE(TYPE_TypesQueue).
 
 
-Window                  WINDOW('EXP to MAP'),AT(,,371,252),GRAY,SYSTEM,ICON(ICON:Thumbnail), |
-                            FONT('Segoe UI',9)
+Window                  WINDOW('EXP to MAP'),AT(,,371,202),GRAY,SYSTEM,ICON(ICON:Thumbnail), |
+                            FONT('Segoe UI',9)  ,RESIZE
                             PROMPT('Export String:'),AT(2,18),USE(?ExportString:PROMPT)
-                            TEXT,AT(47,18,303,10),USE(ExportString),SINGLE
+                            TEXT,AT(47,18,303,10),USE(ExportString),SINGLE,FONT('Consolas')
+                            TEXT,AT(45,32,,12),FULL,USE(ProtoMapString),SINGLE,TRN,READONLY,SKIP,FONT('Consolas')
                             BUTTON,AT(355,18,10,10),USE(?ExpPasteBtn),SKIP,ICON(ICON:Paste), |
                                 TIP('Paste clipboard into Export String')
-                            PROMPT('Only include the portion of the export string after @F'),AT(46,34,323), |
+                            PROMPT('Only include the portion of the export string after @F'),AT(46,5), |
                                 USE(?PROMPT2)
-                            BUTTON('Parse'),AT(46,47,35),USE(?Parse)
-                            LIST,AT(2,71,362,159),USE(?LIST:Parameters),FROM(qParameters), |
-                                FORMAT('61L(2)|M~Type~82L(2)|M~Name~36C|M~<<Optional>~@N1b@40C|M' & |
-                                '~*Reference~@N1b@44C|M~<<*Reference>~@N1b@44C|M~Raw~@N1b@20L(5)' & |
-                                '|M~Array~C(0)@N2b@80L(2)|M~Prototype~')
-                            BUTTON('Close'),AT(46,234),USE(?Close)
+                            BUTTON('&Parse'),AT(46,47,35),USE(?Parse)
+        LIST,AT(2,71),FULL,USE(?LIST:Parameters),FROM(qParameters),VSCROLL, |
+          FORMAT('[' &|
+                   '16R@N_6~ ,~@'            &|
+                   '14L(1)@S4@'              &|
+                              ']|~Position~' &|
+                 '28L(2)|M~Tokens~'          &|
+                 '60L(2)|M~Type~'            &|
+                 '36L(2)|M~Name~'            &|
+                 '36C|M~<<Optional>~@N1b@'   &|
+                 '40C|M~*Reference~@N1b@'    &|
+                 '36C|M~<<*Ref Opt>~@N1b@'   &|
+                 '20C|M~Raw~@N1b@'           &|
+                 '20L(5)|M~Array~C(0)@N2b@'  &|
+                 '80L(2)|M~Prototype~'      )    
+                            BUTTON('Cl&ose'),AT(93,47,35),USE(?Close)
                         END
 
 parser                  ExpParser
 
     CODE
+! (<*LONG[,] A2dim>,LONG SheetFEQ,BOOL Wrap=0,STRING S1,*STRING S2,<STRING S3>,<*STRING S4>)
+! ExportString='PAAlllsbRsbOsbPsb'   test data
+        SYSTEM{PROP:MsgModeDefault}=MSGMODE:CANCOPY
+        SYSTEM{PROP:PropVScroll}=1
         OPEN(Window)
+        0{PROP:MinWidth}=0{PROP:Width} ; 0{PROP:MinHeight}=0{PROP:Height} * .60
         ACCEPT
             CASE ACCEPTED()
             OF ?ExpPasteBtn ; IF ~CLIPBOARD() THEN CYCLE. 
                               ExportString=CLIPBOARD() ; DISPLAY
                               POST(EVENT:Accepted,?ExportString)
+                              POST(EVENT:Accepted,?Parse)
             OF ?ExportString
                AT_Pos=INSTRING('@F',ExportString,1)   !Did they paste the Function@F 
                IF AT_Pos THEN ExportString=SUB(ExportString,AT_Pos+2,9999). !Start after @F
                AT_Pos=INSTRING(' @?',ExportString,1)  !Did they paste EXP Line with @?
                IF AT_Pos THEN ExportString=SUB(ExportString,1,AT_Pos-1).    !Cutoff @?
+               ExportString=LEFT(ExportString)
                DISPLAY 
 
             OF ?Parse
                 Parser.Parse(ExportString, qParameters)
+                DO BuildProtoMapStringRtn
                 DISPLAY()
                 
             OF ?Close
@@ -173,6 +201,20 @@ parser                  ExpParser
         END
         CLOSE(Window)    
 
+BuildProtoMapStringRtn ROUTINE  !Format MAP Prototype from qParameters - probably should be in Class
+    DATA
+QX LONG
+    CODE
+    ProtoMapString='('
+    LOOP QX=1 TO RECORDS(qParameters)
+        GET(qParameters,QX)
+        ProtoMapString=CLIP(ProtoMapString) & |
+                    CHOOSE(QX=1,'',',') & |
+                    qParameters.ProtoType
+    END
+    ProtoMapString=CLIP(ProtoMapString) & ')' 
+    ?ProtoMapString{PROP:Tip}='Label' & ProtoMapString
+    EXIT
 ExpParser.Construct PROCEDURE()
     CODE
         
@@ -210,8 +252,11 @@ ParameterCounter        LONG
 
             CASE ParseState
             OF PARSESTATE:ParameterInit
-                ! CLEAR(q)                   ! What is really happening
-                q.ParameterType          = ''
+                CLEAR(q)                            ! What is really happening
+                q.TokenStartPos          = SELF.CharacterIndex
+                q.TokenLength            = 0
+                q.Tokens                 = '?'
+                q.ParameterType          = 'unknown'
                 q.ParameterName          = ''
                 q.IsOptionalYN           = False
                 q.IsReferenceYN          = False
@@ -294,8 +339,10 @@ ParameterCounter        LONG
                 
             OF PARSESTATE:ParameterDone
                 ParameterCounter += 1
-                q.ParameterName   = 'Parm_' & ParameterCounter
+                q.ParameterName   = 'Parm_' & ParameterCounter 
                 q.ProtoType       = SELF.BuildPrototype(q.ParameterType, q.ParameterName, q.IsReferenceYN, q.IsOptionalYN, q.IsOptionalReferenceYN, q.ArrayCount)
+                q.TokenLength     = SELF.CharacterIndex + 1 - q.TokenStartPos
+                q.Tokens          = SUB(SELF.ExpString,q.TokenStartPos,q.TokenLength)
                 ADD(q)
                 
                 ParseState        = PARSESTATE:ParameterInit
@@ -382,7 +429,9 @@ PARSESTATE:UserTypePrefix   EQUATE
                         SELF.CharacterIndex += 1
                         BREAK
                     ELSE
-                        MESSAGE('Unexpected character for Entity')
+                        MESSAGE('Unexpected character for Entity' & |
+                                ' "'& SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
+                                '||PARSESTATE:DefinedMultiCharacter','ExpParser.GetToken')
                         BREAK
                     END
                     
@@ -395,7 +444,9 @@ PARSESTATE:UserTypePrefix   EQUATE
                         SELF.CharacterIndex += 1
                         BREAK
                     ELSE
-                        MESSAGE('Unexpected character for Unsigned')
+                        MESSAGE('Unexpected character for Unsigned' & |
+                                ' "'& SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
+                                '||MANGLECODE:UnsignedPrefix','ExpParser.GetToken')
                         BREAK
                     END
                     
@@ -409,7 +460,9 @@ PARSESTATE:UserTypePrefix   EQUATE
                         SELF.CharacterIndex += 1
                         BREAK
                     ELSE
-                        MESSAGE('Unexpected character for Complex')
+                        MESSAGE('Unexpected character for Complex' & |
+                                ' "'& SELF.ExpString[ (SELF.CharacterIndex +1) ] &'" @ Position ' & SELF.CharacterIndex +1 & |
+                                '||MANGLECODE:Complex','ExpParser.GetToken')
                         BREAK
                     END
                     
