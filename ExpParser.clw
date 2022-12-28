@@ -116,6 +116,7 @@ Destroy                 PROCEDURE()
 Parse                   PROCEDURE(*STRING ExpString, *TYPE_TypesQueue q)
 GetToken                PROCEDURE(),STRING
 IsTokenPreamble         PROCEDURE(STRING Token),BOOL    !Token is R,P,O = *XXX <*XX> <XXX>
+BuildPrototype          PROCEDURE(STRING ParameterType, STRING ParameterName, BOOL IsReferenceYN, BOOL IsOptionalYN, BOOL IsOptionalReferenceYN, LONG ArrayCount),STRING
                     END
 
 
@@ -214,6 +215,7 @@ ParameterCounter        LONG
 
             CASE ParseState
             OF PARSESTATE:ParameterInit
+                ! CLEAR(q)                   ! What is really happening
                 q.ParameterType          = ''
                 q.ParameterName          = ''
                 q.IsOptionalYN           = False
@@ -221,6 +223,7 @@ ParameterCounter        LONG
                 q.IsOptionalReferenceYN  = False
                 q.ArrayCount             = 0
                 q.Prototype              = ''  !Carl asks: should this be CLEAR(Q) so if new field is added its cleared ?
+                                               !Owen:      Yes it should be a CLEAR(Q).  I did it this way to make it obvious when those flags are getting reset.
                 IF SELF.IsTokenPreamble(Token)
                     ParseState = PARSESTATE:ParameterPreamble
                     CYCLE
@@ -321,21 +324,8 @@ ParameterCounter        LONG
                 
             OF PARSESTATE:ParameterDone
                 ParameterCounter += 1
-                q.ParameterName = 'ParameterExpression' & ParameterCounter
-
-                q.ProtoType = q.ParameterType                                           !Prototype=TYPE
-                IF q.ArrayCount THEN
-                   q.ProtoType=CLIP(q.ProtoType) &'[' & ALL(',',q.ArrayCount-1) & ']'   !Add Array=TYPE[]
-                END
-                q.ProtoType=CLIP(q.ProtoType) &' Parm_' & ParameterCounter              !Add Parm=TYPE[] Parm_#
-                IF q.IsReferenceYN THEN
-                   q.ProtoType='*' & q.ProtoType                                        !Add *Ref=*TYPE[] Parm_#
-                ELSIF q.IsOptionalYN THEN
-                   q.ProtoType='<<' & CLIP(q.ProtoType) &'>'                            !Add <Omit>=<TYPE[] Parm_#>
-                ELSIF q.IsOptionalReferenceYN THEN
-                   q.ProtoType='<<*' & CLIP(q.ProtoType) &'>'                           !Add <*Omit>=<*TYPE[] Parm_#>
-                END
-
+                q.ParameterName   = 'Parm_' & ParameterCounter
+                q.ProtoType       = SELF.BuildPrototype(q.ParameterType, q.ParameterName, q.IsReferenceYN, q.IsOptionalYN, q.IsOptionalReferenceYN, q.ArrayCount)
                 ADD(q)
                 
                 ParseState        = PARSESTATE:ParameterInit
@@ -499,4 +489,23 @@ ReturnValue                     BOOL
             ReturnValue = TRUE
         END
         RETURN(ReturnValue)
+
+ExpParser.BuildPrototype        PROCEDURE(STRING ParameterType, STRING ParameterName, BOOL IsReferenceYN, BOOL IsOptionalYN, BOOL IsOptionalReferenceYN, LONG ArrayCount)
+ReturnValue                         ANY
+    CODE
+        ReturnValue = CLIP(ParameterType)                        !Prototype=TYPE
+        
+        IF ArrayCount <> 0
+            ReturnValue = CLIP(ReturnValue) & '[' & ALL(',',ArrayCount-1) & ']'   !Add Array=TYPE[]
+        END
+        ReturnValue = CLIP(ReturnValue) & ' ' & CLIP(ParameterName)                     !Add Parm=TYPE[] Parm_#
+        IF IsReferenceYN
+           ReturnValue = '*' & ReturnValue                                        !Add *Ref=*TYPE[] Parm_#
+        ELSIF IsOptionalYN
+           ReturnValue = '<<' & CLIP(ReturnValue) &'>'                            !Add <Omit>=<TYPE[] Parm_#>
+        ELSIF IsOptionalReferenceYN
+           ReturnValue = '<<*' & CLIP(ReturnValue) &'>'                           !Add <*Omit>=<*TYPE[] Parm_#>
+        END
+        
+        RETURN(CLIP(ReturnValue))
         

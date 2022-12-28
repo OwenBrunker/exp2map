@@ -1,83 +1,89 @@
-  401090     1B02 Code                EXPPARSER_TEXT
-  402B94       23 Code                IEXE32_TEXT
-  402BB8       4F Code                INIT_TEXT
-  403000      1FB Initialized Data    EXPPARSER_CONST
-  4031FC       F4 Initialized Data    EXPPARSER_DATA
-  4032F0       44 Initialized Data    IEXE32_DATA
-  403334        0 Initialized Data    __CPPINI_CONS
-  403334       1C Initialized Data    __CPPINI_CONST
-  403350        4 Initialized Data    __CPPINI_END
-  403354        0 Initialized Data    __INIVMT_CONS
-  403354        8 Initialized Data    __INIVMT_CONST
-  40335C        0 Initialized Data    __INIVMT_CONST_END
-  403360        C Un-initialized Data EXPPARSER_BSS
-  404000        8 __T_L_S__DAT
-  404008        0 __T_L_S__DATA_END
-  404010        0 __T_L_S__BS
-  404010        0 __T_L_S__BSS_END
+  4010A8     1F6E Code                EXPPARSER_TEXT
+  403018       23 Code                IEXE32_TEXT
+  40303C       4F Code                INIT_TEXT
+  404000      21A Initialized Data    EXPPARSER_CONST
+  40421C      10C Initialized Data    EXPPARSER_DATA
+  404328       44 Initialized Data    IEXE32_DATA
+  40436C        0 Initialized Data    __CPPINI_CONS
+  40436C       1C Initialized Data    __CPPINI_CONST
+  404388        4 Initialized Data    __CPPINI_END
+  40438C        0 Initialized Data    __INIVMT_CONS
+  40438C        8 Initialized Data    __INIVMT_CONST
+  404394        0 Initialized Data    __INIVMT_CONST_END
+  4043A0        C Un-initialized Data EXPPARSER_BSS
+  405000        8 __T_L_S__DAT
+  405008        0 __T_L_S__DATA_END
+  405010        0 __T_L_S__BS
+  405010        0 __T_L_S__BSS_END
 
-  401090 _main
-  4010B4 ISTOKENPREAMBLE@F9EXPPARSERsb
-  401158 GETTOKEN@F9EXPPARSER
-  401F80 PARSE@F9EXPPARSERRsb15TYPE_TYPESQUEUE
-  4029C8 DESTRUCT@F9EXPPARSER
-  4029FC CONSTRUCT@F9EXPPARSER
-  402A1C TESTWINDOW@F
-  4031FC TYPE$TYPE_TOKENSQUEUE
-  403228 TCB$TYPE_TOKENSQUEUE
-  4032A4 TYPE$EXPPARSER
-  4032E4 VMT$EXPPARSER
-  403354 VMTP$EXPPARSER
-  403360 $TYPE_TOKENSQUEUE
-  405000 __import_section_start
-  4054D4 __import_section_end
+  4010A8 _main
+  4010CC BUILDPROTOTYPE@F9EXPPARSERsbsbllll
+  401338 ISTOKENPREAMBLE@F9EXPPARSERsb
+  4013DC GETTOKEN@F9EXPPARSER
+  402210 PARSE@F9EXPPARSERRsb15TYPE_TYPESQUEUE
+  402CF0 DESTRUCT@F9EXPPARSER
+  402D24 CONSTRUCT@F9EXPPARSER
+  402D44 TESTWINDOW@F
+  40421C TYPE$TYPE_TOKENSQUEUE
+  404248 TCB$TYPE_TOKENSQUEUE
+  4042DC TYPE$EXPPARSER
+  40431C VMT$EXPPARSER
+  40438C VMTP$EXPPARSER
+  4043A0 $TYPE_TOKENSQUEUE
+  406000 __import_section_start
+  406568 __import_section_end
 
 Imports
-ClaRUN.dll:Cla$ADDqueue 4050DC
-ClaRUN.dll:Cla$AssignRefUfo 4050E0
-ClaRUN.dll:Cla$CLEAR 4050E4
-ClaRUN.dll:Cla$clearstr 4050E8
-ClaRUN.dll:Cla$CLOSEwindow 4050EC,401000
-ClaRUN.dll:Cla$code 4050F0
-ClaRUN.dll:Cla$comparestr 4050F4
-ClaRUN.dll:Cla$DISPLAY 4050F8,401008
-ClaRUN.dll:Cla$DPopLong 4050FC
-ClaRUN.dll:Cla$EndEventLoop 405100
-ClaRUN.dll:Cla$EVENT 405104,401010
-ClaRUN.dll:Cla$FIELD 405108,401018
-ClaRUN.dll:Cla$FREEqueue 40510C
-ClaRUN.dll:Cla$FREEqueuea 405110,401020
-ClaRUN.dll:Cla$freestr 405114
-ClaRUN.dll:Cla$FreeUfo 405118
-ClaRUN.dll:Cla$freewindow 40511C
-ClaRUN.dll:Cla$MessageBox 405120,401028
-ClaRUN.dll:Cla$OPENwindow 405124,401030
-ClaRUN.dll:Cla$PopString 405128
-ClaRUN.dll:Cla$PopTemp 40512C
-ClaRUN.dll:Cla$POST 405130,401038
-ClaRUN.dll:Cla$PushLong 405134
-ClaRUN.dll:Cla$PushNull 405138
-ClaRUN.dll:Cla$PushString 40513C
-ClaRUN.dll:Cla$PushUfo 405140
-ClaRUN.dll:Cla$pwopen 405144,401040
-ClaRUN.dll:Cla$Stack2DStack 405148
-ClaRUN.dll:Cla$Stack2Ufo 40514C
-ClaRUN.dll:Cla$StackCLIP 405150,401048
-ClaRUN.dll:Cla$StackConcat 405154
-ClaRUN.dll:Cla$StackHeap 405158
-ClaRUN.dll:Cla$StackLen 40515C,401050
-ClaRUN.dll:Cla$StackSUB 405160,401058
-ClaRUN.dll:Cla$StartEventLoop 405164
-ClaRUN.dll:Cla$storestr 405168
-ClaRUN.dll:_exit 40516C,401060
-ClaRUN.dll:_free 405170
-ClaRUN.dll:_malloc 405174
-ClaRUN.dll:__a_chkstk 405178,401068
-ClaRUN.dll:__e_index 40517C,401070
-ClaRUN.dll:__e_stack 405180,401078
-ClaRUN.dll:__sysinit 405184,401080
-ClaRUN.dll:__sysstart 405188,401088
+ClaRUN.dll:Cla$ADDqueue 4060F0
+ClaRUN.dll:Cla$AssignRefUfo 4060F4
+ClaRUN.dll:Cla$CLEAR 4060F8
+ClaRUN.dll:Cla$clearstr 4060FC
+ClaRUN.dll:Cla$CLIPBOARD 406100,401000
+ClaRUN.dll:Cla$CLOSEwindow 406104,401008
+ClaRUN.dll:Cla$code 406108
+ClaRUN.dll:Cla$comparestr 40610C
+ClaRUN.dll:Cla$DISPLAY 406110,401010
+ClaRUN.dll:Cla$DPopLong 406114
+ClaRUN.dll:Cla$EndEventLoop 406118
+ClaRUN.dll:Cla$EVENT 40611C,401018
+ClaRUN.dll:Cla$FIELD 406120,401020
+ClaRUN.dll:Cla$FREEqueue 406124
+ClaRUN.dll:Cla$FREEqueuea 406128,401028
+ClaRUN.dll:Cla$freestr 40612C
+ClaRUN.dll:Cla$FreeUfo 406130
+ClaRUN.dll:Cla$freewindow 406134
+ClaRUN.dll:Cla$MessageBox 406138,401030
+ClaRUN.dll:Cla$OPENwindow 40613C,401038
+ClaRUN.dll:Cla$PopString 406140
+ClaRUN.dll:Cla$PopTemp 406144
+ClaRUN.dll:Cla$POST 406148,401040
+ClaRUN.dll:Cla$PushLong 40614C
+ClaRUN.dll:Cla$PushNull 406150
+ClaRUN.dll:Cla$PushString 406154
+ClaRUN.dll:Cla$PushUfo 406158
+ClaRUN.dll:Cla$pwopen 40615C,401048
+ClaRUN.dll:Cla$Stack2DStack 406160
+ClaRUN.dll:Cla$Stack2Ufo 406164
+ClaRUN.dll:Cla$StackALL 406168,401050
+ClaRUN.dll:Cla$StackCLIP 40616C,401058
+ClaRUN.dll:Cla$StackCompareN 406170
+ClaRUN.dll:Cla$StackConcat 406174
+ClaRUN.dll:Cla$StackConcatR 406178
+ClaRUN.dll:Cla$StackHeap 40617C
+ClaRUN.dll:Cla$StackINSTRING 406180,401060
+ClaRUN.dll:Cla$StackLen 406184,401068
+ClaRUN.dll:Cla$StackSUB 406188,401070
+ClaRUN.dll:Cla$StartEventLoop 40618C
+ClaRUN.dll:Cla$storestr 406190
+ClaRUN.dll:_exit 406194,401078
+ClaRUN.dll:_free 406198
+ClaRUN.dll:_malloc 40619C
+ClaRUN.dll:__a_chkstk 4061A0,401080
+ClaRUN.dll:__e_index 4061A4,401088
+ClaRUN.dll:__e_stack 4061A8,401090
+ClaRUN.dll:__sysinit 4061AC,401098
+ClaRUN.dll:__sysstart 4061B0,4010A0
 
 
 
-Entry Point:   402B94
+Entry Point:   403018
