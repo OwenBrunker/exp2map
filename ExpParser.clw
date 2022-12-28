@@ -152,8 +152,7 @@ parser                  ExpParser
     CODE
         OPEN(Window)
         ACCEPT
-            CASE FIELD()
-            OF 0
+            CASE ACCEPTED()
             OF ?ExpPasteBtn ; IF ~CLIPBOARD() THEN CYCLE. 
                               ExportString=CLIPBOARD() ; DISPLAY
                               POST(EVENT:Accepted,?ExportString)
@@ -165,19 +164,12 @@ parser                  ExpParser
                DISPLAY 
 
             OF ?Parse
-                CASE EVENT()
-                OF EVENT:Accepted
-                    Parser.Parse(ExportString, qParameters)
-                    DISPLAY()
-                END
+                Parser.Parse(ExportString, qParameters)
+                DISPLAY()
                 
             OF ?Close
-                CASE EVENT()
-                OF EVENT:Accepted
-                   POST(EVENT:CloseWindow) 
-                END
+                POST(EVENT:CloseWindow) 
             END
-            
         END
         CLOSE(Window)    
 
