@@ -286,13 +286,10 @@ ParameterStartPos       LONG
                 CASE Token
                 OF MANGLECODE:PassByRef
                     q.IsReferenceYN = TRUE
-                    q.Tokens = CLIP(q.Tokens) & Token
                 OF MANGLECODE:Optional
                     q.IsOptionalYN = TRUE
-                    q.Tokens = CLIP(q.Tokens) & Token
                 OF MANGLECODE:PassByRefOptional
                     q.IsOptionalReferenceYN = TRUE
-                    q.Tokens = CLIP(q.Tokens) & Token
                 END
                 
                 ParseState = PARSESTATE:ParameterARRAY  !Carl was: PARSESTATE:ParameterType
@@ -301,7 +298,6 @@ ParameterStartPos       LONG
                 CASE Token
                 OF MANGLECODE:Array
                    q.ArrayCount += 1  !Increment ARRAY
-                    q.Tokens     = CLIP(q.Tokens) & Token
                    !Fall thru for next GetToken could be more 'A' 
                 ELSE
                    ParseState = PARSESTATE:ParameterType   !No more AAA so move to Param Types
@@ -337,18 +333,15 @@ ParameterStartPos       LONG
                 OF MANGLECODE:CstringRaw
                     q.ParameterType = TYPE:Cstring
                     q.IsRaw         = True
-                    q.Tokens        = CLIP(q.Tokens) & Token
                 OF MANGLECODE:GroupRaw
                     q.ParameterType = TYPE:Group
                     q.IsRaw         = True
-                    q.Tokens        = CLIP(q.Tokens) & Token
                 OF MANGLECODE:Group;       q.ParameterType = TYPE:Group
                 OF MANGLECODE:Any;         q.ParameterType = TYPE:Any
                 OF MANGLECODE:Function;    q.ParameterType = TYPE:Function
                 OF MANGLECODE:FunctionEnd; q.ParameterType = TYPE:FunctionEnd
                 ELSE
                     q.ParameterType = Token     !Likely a Named Type e.g. Exp=5MYQUE is MapParm=MYQUE
-                    q.Tokens        = CLIP(q.Tokens) & Token
                 END
                 ParseState = PARSESTATE:ParameterDone
                 CYCLE
