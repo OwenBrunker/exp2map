@@ -208,18 +208,24 @@ parser                  ExpParser
 
 BuildProtoMapStringRtn ROUTINE  !Format MAP Prototype from qParameters - probably should be in Class
     DATA
-QX LONG
+QX      LONG
+IsRaw   BOOL
     CODE
-    ProtoMapString='('
-    LOOP QX=1 TO RECORDS(qParameters)
-        GET(qParameters,QX)
-        ProtoMapString=CLIP(ProtoMapString) & |
-                    CHOOSE(QX=1,'',',') & |
-                    qParameters.ProtoType
-    END
-    ProtoMapString=CLIP(ProtoMapString) & ')' 
-    ?ProtoMapString{PROP:Tip}='Label' & ProtoMapString
-    EXIT
+        IsRaw = FALSE
+        ProtoMapString='('
+        LOOP QX=1 TO RECORDS(qParameters)
+            GET(qParameters,QX)
+            
+            ProtoMapString=CLIP(ProtoMapString) & |
+                CHOOSE(QX=1,'',',') & |
+                qParameters.ProtoType
+            IF qParameters.IsRaw = TRUE THEN IsRaw = TRUE.
+        END
+        ProtoMapString=CLIP(ProtoMapString) & ')' & CHOOSE(IsRaw = TRUE, ',RAW', '') 
+        ?ProtoMapString{PROP:Tip}='Label' & ProtoMapString
+            
+         EXIT
+            
 ExpParser.Construct PROCEDURE()
     CODE
         
