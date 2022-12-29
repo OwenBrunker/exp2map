@@ -118,6 +118,7 @@ ExpParser           CLASS,TYPE
 ExpString               &STRING
 ExpStringLength          LONG
 CharacterIndex           LONG
+CharacterIndexStart      LONG
 
 Construct               PROCEDURE()
 Destruct                PROCEDURE()
@@ -261,9 +262,9 @@ ParameterStartPos       LONG
             CASE ParseState
             OF PARSESTATE:ParameterInit
                 CLEAR(q)                            ! What is really happening
-                q.TokenStartPos          = 0        ! Will be set =ParameterStartPos later
+                q.TokenStartPos          = SELF.CharacterIndexStart
                 q.TokenLength            = 0
-                q.Tokens                 = '?'
+                q.Tokens                 = ''
                 q.ParameterType          = 'unknown'
                 q.ParameterName          = ''
                 q.IsOptionalYN           = False
@@ -285,10 +286,13 @@ ParameterStartPos       LONG
                 CASE Token
                 OF MANGLECODE:PassByRef
                     q.IsReferenceYN = TRUE
+                    q.Tokens = CLIP(q.Tokens) & Token
                 OF MANGLECODE:Optional
                     q.IsOptionalYN = TRUE
+                    q.Tokens = CLIP(q.Tokens) & Token
                 OF MANGLECODE:PassByRefOptional
                     q.IsOptionalReferenceYN = TRUE
+                    q.Tokens = CLIP(q.Tokens) & Token
                 END
                 
                 ParseState = PARSESTATE:ParameterARRAY  !Carl was: PARSESTATE:ParameterType
@@ -297,6 +301,7 @@ ParameterStartPos       LONG
                 CASE Token
                 OF MANGLECODE:Array
                    q.ArrayCount += 1  !Increment ARRAY
+                    q.Tokens     = CLIP(q.Tokens) & Token
                    !Fall thru for next GetToken could be more 'A' 
                 ELSE
                    ParseState = PARSESTATE:ParameterType   !No more AAA so move to Param Types
@@ -332,15 +337,18 @@ ParameterStartPos       LONG
                 OF MANGLECODE:CstringRaw
                     q.ParameterType = TYPE:Cstring
                     q.IsRaw         = True
+                    q.Tokens        = CLIP(q.Tokens) & Token
                 OF MANGLECODE:GroupRaw
                     q.ParameterType = TYPE:Group
                     q.IsRaw         = True
+                    q.Tokens        = CLIP(q.Tokens) & Token
                 OF MANGLECODE:Group;       q.ParameterType = TYPE:Group
                 OF MANGLECODE:Any;         q.ParameterType = TYPE:Any
                 OF MANGLECODE:Function;    q.ParameterType = TYPE:Function
                 OF MANGLECODE:FunctionEnd; q.ParameterType = TYPE:FunctionEnd
                 ELSE
                     q.ParameterType = Token     !Likely a Named Type e.g. Exp=5MYQUE is MapParm=MYQUE
+                    q.Tokens        = CLIP(q.Tokens) & Token
                 END
                 ParseState = PARSESTATE:ParameterDone
                 CYCLE
@@ -349,9 +357,9 @@ ParameterStartPos       LONG
                 ParameterCounter += 1
                 q.ParameterName   = 'Parm_' & ParameterCounter 
                 q.ProtoType       = SELF.BuildPrototype(q.ParameterType, q.ParameterName, q.IsReferenceYN, q.IsOptionalYN, q.IsOptionalReferenceYN, q.ArrayCount)
-                q.TokenStartPos   = ParameterStartPos
+                !q.TokenStartPos  =  ! Set on initialisation of queue record
                 q.TokenLength     = SELF.CharacterIndex + 1 - q.TokenStartPos
-                q.Tokens          = SUB(SELF.ExpString,q.TokenStartPos,q.TokenLength)
+                q.Tokens          = SUB(SELF.ExpString, q.TokenStartPos, q.TokenLength)
                 ADD(q)
                 
                 ParseState        = PARSESTATE:ParameterInit    !Suggest DO SetStateForNextParameterRtn so Q is cleared and ready to go
@@ -370,7 +378,6 @@ ParameterStartPos       LONG
 
 ExpParser.GetToken  PROCEDURE()
 ReturnValue             ANY
-CharacterIndexStart     LONG
 UserTypeLength          LONG
 
 ParseState              LONG
@@ -383,7 +390,7 @@ PARSESTATE:UserTypePrefix   EQUATE
     CODE
         ReturnValue         = ''
         ParseState          = PARSESTATE:InitialPass
-        CharacterIndexStart = SELF.CharacterIndex
+        SELF.CharacterIndexStart = SELF.CharacterIndex +1
         
         LOOP WHILE SELF.CharacterIndex < SELF.ExpStringLength
             CASE ParseState
@@ -504,7 +511,7 @@ PARSESTATE:UserTypePrefix   EQUATE
                     ! Our character indexes are zero based.
                     ! Clarion strings are one based arrays
                     ! We have read past the size parameter, so we need to keep the current character position for the next state
-                    UserTypeLength = SELF.ExpString[ (CharacterIndexStart +1) : SELF.CharacterIndex ]
+                    UserTypeLength = SELF.ExpString[ SELF.CharacterIndexStart : SELF.CharacterIndex ]
                     ReturnValue    = SELF.ExpString[ SELF.CharacterIndex +1 :  SELF.CharacterIndex + UserTypeLength]
                     SELF.CharacterIndex += UserTypeLength
                     BREAK
@@ -537,7 +544,7 @@ ReturnValue                         ANY
         IF ArrayCount <> 0
             ReturnValue = CLIP(ReturnValue) & '[' & ALL(',',ArrayCount-1) & ']'   !Add Array=TYPE[]
         END
-        ReturnValue = CLIP(ReturnValue) & ' ' & CLIP(ParameterName)                     !Add Parm=TYPE[] Parm_#
+        ReturnValue = CLIP(ReturnValue) & ' ' & CLIP(ParameterName)               !Add Parm=TYPE[] Parm_#
         IF IsReferenceYN
            ReturnValue = '*' & ReturnValue                                        !Add *Ref=*TYPE[] Parm_#
         ELSIF IsOptionalYN
