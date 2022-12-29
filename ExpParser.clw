@@ -96,7 +96,6 @@ ParameterType           STRING(255)
 ParameterName           STRING(255)
 IsOptionalYN            BOOL   ! O
 IsReferenceYN           BOOL   ! R
-IsOptionalReferenceYN   BOOL   ! P
 IsRaw                   BOOL   ! Applies to cstrings, and groups
 ArrayCount              BYTE   ! A
 ProtoType               STRING(255)
@@ -126,7 +125,7 @@ Destroy                 PROCEDURE()
 Parse                   PROCEDURE(*STRING ExpString, *TYPE_TypesQueue q)
 GetToken                PROCEDURE(),STRING
 IsTokenPreamble         PROCEDURE(STRING Token),BOOL    !Token is R,P,O = *XXX <*XX> <XXX>
-BuildPrototype          PROCEDURE(STRING ParameterType, STRING ParameterName, BOOL IsReferenceYN, BOOL IsOptionalYN, BOOL IsOptionalReferenceYN, LONG ArrayCount),STRING
+BuildPrototype          PROCEDURE(STRING ParameterType, STRING ParameterName, BOOL IsReferenceYN, BOOL IsOptionalYN, LONG ArrayCount),STRING
                     END
 
 
@@ -159,10 +158,9 @@ Window                  WINDOW('EXP to MAP'),AT(,,371,202),GRAY,SYSTEM,ICON(ICON
                  '28L(2)|M~Tokens~'          &|
                  '60L(2)|M~Type~'            &|
                  '36L(2)|M~Name~'            &|
-                 '36C|M~<<Optional>~@N1b@'   &|
-                 '40C|M~*Reference~@N1b@'    &|
-                 '36C|M~<<*Ref Opt>~@N1b@'   &|
-                 '20C|M~Raw~@N1b@'           &|
+                 '36C|M~<<Optional>~@N2~<<>~b@'   &|
+                 '40C|M~*Reference~@N1~*~b@'    &|
+                 '20C|M~Raw~@N3~RAW~b@'           &|
                  '20L(5)|M~Array~C(0)@N2b@'  &|
                  '80L(2)~Prototype~'       )
                             BUTTON('Cl&ose'),AT(93,47,35),USE(?Close)
@@ -269,7 +267,6 @@ ParameterStartPos       LONG
                 q.ParameterName          = ''
                 q.IsOptionalYN           = False
                 q.IsReferenceYN          = False
-                q.IsOptionalReferenceYN  = False
                 q.IsRaw                  = False
                 q.ArrayCount             = 0
                 q.Prototype              = ''  !Carl asks: should this be CLEAR(Q) so if new field is added its cleared ?
@@ -289,7 +286,8 @@ ParameterStartPos       LONG
                 OF MANGLECODE:Optional
                     q.IsOptionalYN = TRUE
                 OF MANGLECODE:PassByRefOptional
-                    q.IsOptionalReferenceYN = TRUE
+                    q.IsReferenceYN = TRUE
+                    q.IsOptionalYN = TRUE
                 END
                 
                 ParseState = PARSESTATE:ParameterARRAY  !Carl was: PARSESTATE:ParameterType
@@ -349,7 +347,7 @@ ParameterStartPos       LONG
             OF PARSESTATE:ParameterDone
                 ParameterCounter += 1
                 q.ParameterName   = 'Parm_' & ParameterCounter 
-                q.ProtoType       = SELF.BuildPrototype(q.ParameterType, q.ParameterName, q.IsReferenceYN, q.IsOptionalYN, q.IsOptionalReferenceYN, q.ArrayCount)
+                q.ProtoType       = SELF.BuildPrototype(q.ParameterType, q.ParameterName, q.IsReferenceYN, q.IsOptionalYN, q.ArrayCount)
                 !q.TokenStartPos  =  ! Set on initialisation of queue record
                 q.TokenLength     = SELF.CharacterIndex + 1 - q.TokenStartPos
                 q.Tokens          = SUB(SELF.ExpString, q.TokenStartPos, q.TokenLength)
@@ -529,7 +527,7 @@ ReturnValue                     BOOL
         END
         RETURN(ReturnValue)
 
-ExpParser.BuildPrototype        PROCEDURE(STRING ParameterType, STRING ParameterName, BOOL IsReferenceYN, BOOL IsOptionalYN, BOOL IsOptionalReferenceYN, LONG ArrayCount)
+ExpParser.BuildPrototype        PROCEDURE(STRING ParameterType, STRING ParameterName, BOOL IsReferenceYN, BOOL IsOptionalYN, LONG ArrayCount)
 ReturnValue                         ANY
     CODE
         ReturnValue = CLIP(ParameterType)                        !Prototype=TYPE
@@ -540,10 +538,9 @@ ReturnValue                         ANY
         ReturnValue = CLIP(ReturnValue) & ' ' & CLIP(ParameterName)               !Add Parm=TYPE[] Parm_#
         IF IsReferenceYN
            ReturnValue = '*' & ReturnValue                                        !Add *Ref=*TYPE[] Parm_#
-        ELSIF IsOptionalYN
+        END
+        IF IsOptionalYN
            ReturnValue = '<<' & CLIP(ReturnValue) &'>'                            !Add <Omit>=<TYPE[] Parm_#>
-        ELSIF IsOptionalReferenceYN
-           ReturnValue = '<<*' & CLIP(ReturnValue) &'>'                           !Add <*Omit>=<*TYPE[] Parm_#>
         END
         
         RETURN(CLIP(ReturnValue))
