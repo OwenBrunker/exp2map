@@ -12,6 +12,17 @@ OMIT('***')
  * 2022-12-28 Carl  Add ProtoMapString with all parameters as seen in MAP. 
  *                  Queue add Token Position and Tokens to understand how it was parsed apart
  * 2022-12-30 Carl  add some TopSpeed C to decode RTL exports i=LONG Ui=ULONG C=CONST
+ * 2024-08-05 Carl  Changes after testing with Skype post by Eric with 22 and 42 parms
+ *                      Test 22:  EXECUTESQL@F11FL_SQLCLASSsbRuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPu @   <-- Has leading Name@F that needs "clean"
+ *                      Test 42:  F11FL_SQLCLASSsbRuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPuPu
+ *                      Types:    PAAllRlsbRsbOsbPsbBqg5MYQUE7MYGROUPFUcUiPCcUiBwBrBfBbBkBqBiBa
+ *                  On Accept ExportString DO Clean routine to remove "Name@F" at start else trips up parsing. Was in above Test 22.
+ *                  CleanExportStringRtn change StrPos() RegEx to look for '@ ?' or '@ #' on end using '$'
+ *                  ProtoMapString add Copy Button.
+ *                  Add ParameterNumber to Queue and Parser in Class so can display in LIST. Helps to know where Parm is in Prototype.
+ *                  Add # Column to LIST to see new q.ParameterNumber
+ *                  WINDOW - Move and Resize controls to work better with 20+ parms and longer Export String
+ *                  Message() more readable in Font Segoe UI 11
  ***      !=========================================================================================
 
 !Region Equates
@@ -99,6 +110,7 @@ TYPE:TopSpeedC_CONST        EQUATE('CONST')
 
 !Region QUEUEs
 TYPE_TypesQueue     QUEUE,TYPE
+ParameterNumber         USHORT          !Squence Number 1,2,3,4,5,6
 TokenStartPos           USHORT          !SUB(Input, StartPos
 TokenLength             USHORT          !SUB(Input, StartPos, Length)
 Tokens                  STRING(255)
@@ -144,47 +156,48 @@ BuildPrototype          PROCEDURE(STRING ParameterType, STRING ParameterName, BO
                     END
 
 
-  CODE
+    CODE
         TestWindow()
         
 TestWindow          PROCEDURE()
 AT_Pos                  LONG
 ExportString            STRING(2048)
-ProtoMapString          STRING(2048)            !Prototype of all parameters in Queue e.g. (<LONG P1>)
+ProtoMapString          STRING(2048)            !Prototype of all parameters in Queue e.g. (<LONG P1>). Tested 42 and took 670 bytes
 qParameters             QUEUE(TYPE_TypesQueue).
 CBTest                  STRING(32000)           !Carl's test what's on the Clipboard 
 
-Window                  WINDOW('EXP to MAP'),AT(,,371,202),GRAY,SYSTEM,ICON(ICON:Thumbnail), |
-                            FONT('Segoe UI',9)  ,RESIZE
-                            PROMPT('Export String:'),AT(2,18),USE(?ExportString:PROMPT)
-                            TEXT,AT(47,18,303,10),USE(ExportString),SINGLE,FONT('Consolas')
-                            TEXT,AT(45,32,,24),FULL,USE(ProtoMapString),TRN,READONLY,SKIP,FONT('Consolas')
-                            BUTTON,AT(355,18,10,10),USE(?ExpPasteBtn),SKIP,ICON(ICON:Paste), |
-                                TIP('Paste clipboard into Export String')
-                            PROMPT('Only include the portion of the export string after @F'),AT(46,5), |
-                                USE(?PROMPT2)
-                            BUTTON('&Parse'),AT(4,41,35),USE(?Parse)
-        LIST,AT(2,71),FULL,USE(?LIST:Parameters),FROM(qParameters),VSCROLL, |
-          FORMAT('[' &|
-                   '16R@N_6~ ,~@'            &|
-                   '14L(1)@S4@'              &|
-                              ']|~Position~' &|
-                 '28L(2)|M~Tokens~'          &|
-                 '60L(2)|M~Type~'            &|
-                 '36L(2)|M~Name~'            &|
-                 '36C|M~<<Optional>~@N2~<<>~b@' &|
-                 '40C|M~*Reference~@N1~*~b@'    &|
-                 '20L(5)|M~Array~C(0)@N2b@'     &|
-                 '20C|M~Raw~@N3~RAW~b@'         &|
-                 '23C|M~Const~@N5~Const~b@'     &|
-                 '80L(2)~Prototype~'       )
-                            BUTTON('Cl&ose'),AT(274,3,35,12),USE(?Close),HIDE
-                            BUTTON('Re-Run'),AT(315,3,35,12),USE(?ReRun),TIP('Run another instance')
-                            TEXT,AT(400,1,,55),USE(CBTest),SKIP,HIDE,FULL,HVSCROLL,TIP('Filled from ClipBoard when Input is TEST')
-                        END
+Window WINDOW('EXP to MAP - Convert Mangled to Protype'),AT(,,400,202),GRAY,AUTO,SYSTEM,ICON(ICON:Thumbnail) |
+            ,FONT('Segoe UI',9),RESIZE
+        PROMPT('Export String:'),AT(2,18),USE(?ExportString:PROMPT)
+        TEXT,AT(47,18,,10),FULL,USE(ExportString),FONT('Consolas'),SINGLE
+        TEXT,AT(45,32,,32),FULL,USE(ProtoMapString),SKIP,TRN,VSCROLL,FONT('Consolas'),READONLY
+        BUTTON,AT(45,3,11,11),USE(?ExpPasteBtn),SKIP,ICON(ICON:Paste),TIP('Paste clipboard into Expo' & |
+                'rt String and Parse'),FLAT
+        PROMPT('Only include the portion of the Export string after @F'),AT(97,5),USE(?ExportString:FYI)
+        BUTTON('&Parse'),AT(4,31,35),USE(?Parse)
+        BUTTON,AT(29,52,11,11),USE(?ProtoCopyBtn),SKIP,ICON(ICON:Copy),TIP('Copy the Prototype'),FLAT
+        LIST,AT(2,71),FULL,USE(?LIST:Parameters),VSCROLL,FROM(qParameters) , |
+ FORMAT('14R(4)|M~#~C(0)@N2@' &|
+        '['                            &|
+          '16R@N_6~ ,~@'               &|
+          '14L(1)@S4@'                 &|
+                     ']|~Position~'    &|
+        '28L(2)|M~Tokens~'             &|
+        '60L(2)|M~Type~'               &|
+        '36L(2)|M~Name~'               &|
+        '36C|M~<<Optional>~@N2~<<>~b@' &|
+        '40C|M~*Reference~@N1~*~b@'    &|
+        '20L(5)|M~Array~C(0)@N2b@'     &|
+        '20C|M~Raw~@N3~RAW~b@'         &|
+        '23C|M~Const~@N5~Const~b@'     &|
+        '80L(2)~Prototype~'           )
+        BUTTON('Cl&ose'),AT(295,3,30,12),USE(?Close),HIDE
+        BUTTON('Re-Run'),AT(331,3,35,12),USE(?ReRun),TIP('Run another instance')
+        TEXT,AT(400,1,,55),FULL,USE(CBTest),SKIP,HIDE,HVSCROLL,TIP('Filled from ClipBoard when Input' & |
+                ' is TEST')
+    END
 
 parser                  ExpParser
-
     CODE
 ! ExportString='PAAlllsbRsbOsbPsb' !test:  (<*LONG[,] A2dim>,LONG SheetFEQ,BOOL Wrap=0,STRING S1,*STRING S2,<STRING S3>,<*STRING S4>)
 ! ExportString='BwBrBfBbBkBqBiBa'  !test:  (*WINDOW W1,*REPORT R1>,FILE F1,BLOB B1,KEY K1,QUEUE Q1,VIEW V1,APPLICATION A1)  
@@ -195,6 +208,7 @@ parser                  ExpParser
 ! ExportString='PCc'  !_WslHelp$SetHelpFile@FPCc    SetHelpFileRTL(CONST *CSTRING HelpFileName)
 ! ExportString='FUcUiPCcUiPCcPCc'  !    e.g. _14TypeDescWriter__AddField@FUcUiPCcUiPCcPCc  (BYTE Parm_1,ULONG Parm_2,<CONST *CSTRING Parm_3>,ULONG Parm_4,<CONST *CSTRING Parm_5>,<CONST *CSTRING Parm_6>),RAW
 
+        SYSTEM{PROP:FontName}='Segoe UI' ; SYSTEM{PROP:FontSize}=11     !Message() in Segoe UI 11
         SYSTEM{PROP:MsgModeDefault}=MSGMODE:CANCOPY
         SYSTEM{PROP:PropVScroll}=1
         OPEN(Window)
@@ -212,6 +226,7 @@ parser                  ExpParser
                               DISPLAY 
                               IF ExportString THEN POST(EVENT:Accepted,?Parse).
             OF ?ExportString
+               DO CleanExportStringRtn
                DO BuildProtoMapStringRtn
                DISPLAY 
 
@@ -223,6 +238,8 @@ parser                  ExpParser
                 DO BuildProtoMapStringRtn
                 DISPLAY()
                 
+            OF ?ProtoCopyBtn 
+                SETCLIPBOARD(ProtoMapString)  
             OF ?Close
                 POST(EVENT:CloseWindow)
             OF ?ReRun
@@ -235,8 +252,8 @@ CleanExportStringRtn ROUTINE    !Remove Function Name before "@F" and any "@?" o
     AT_Pos=INSTRING('@F',ExportString,1)   !Did they paste the Function@F 
     IF AT_Pos THEN ExportString=SUB(ExportString,AT_Pos+2,9999). !Start after @F
     !AT_Pos=INSTRING(' @?',ExportString,1)  !Did they paste EXP Line with @?
-    AT_Pos=STRPOS(ExportString,' @[?0-9 ]') !Did they paste EXP Line with @? or @123 or @ alone
-    IF AT_Pos THEN ExportString=SUB(ExportString,1,AT_Pos-1).    !Cutoff @? @123
+    AT_Pos=STRPOS(CLIP(ExportString),' @[?0-9 ]*$')              !Did they paste EXP Line with @? or @123 or '@ 123' or @ alone
+    IF AT_Pos THEN ExportString=SUB(ExportString,1,AT_Pos-1).   !Cutoff @? @123
     ExportString=LEFT(ExportString)
     EXIT
 
@@ -419,6 +436,7 @@ ParameterStartPos       LONG
                 
             OF PARSESTATE:ParameterDone
                 ParameterCounter += 1
+                q.ParameterNumber = ParameterCounter
                 q.ParameterName   = 'Parm_' & ParameterCounter 
                 q.ProtoType       = SELF.BuildPrototype(q.ParameterType, q.ParameterName, q.IsReferenceYN, q.IsOptionalYN, q.ArrayDIMs, q.IsConstYN)
                 !q.TokenStartPos  =  ! Set on initialisation of queue record

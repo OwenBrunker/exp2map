@@ -1,6 +1,0 @@
-# exp2map
-This parser takes the mangled portion of a procedure export string and converts it to a queue of data type parameters.
-
-The assumption is that the procedure name has already been extracted out and only the portion of the string after
-the @F is passed through to the parser.
- 

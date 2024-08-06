@@ -5,3 +5,7 @@ The assumption is that the procedure name has already been extracted out and onl
 the @F is passed through to the parser.
 
 When the program is executed, a window displays an entry box and a listbox.  Enter a value into the entry box and press the parse button.
+
+Example of parsing an EXP line with many types:
+
+![main window](readme_1.png)
