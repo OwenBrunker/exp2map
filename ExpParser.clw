@@ -55,13 +55,16 @@ MANGLECODE:Bfloat8               EQUATE('b8')
 MANGLECODE:String                EQUATE('sb')
 MANGLECODE:Pstring               EQUATE('sp')
 MANGLECODE:Cstring               EQUATE('sc')
+MANGLECODE:Ustring               EQUATE('sz')   !Unicode C 12.0.14313
 MANGLECODE:Short                 EQUATE('s')
 MANGLECODE:Long                  EQUATE('l')
 MANGLECODE:Sreal                 EQUATE('f')
 MANGLECODE:Real                  EQUATE('d')
 MANGLECODE:Decimal               EQUATE('e')
+!MANGLECODE:DateTime              EQUATE('e')  !Added 12.0.142xx is a DECIMAL(19,7) mangles the same as 'e'
 MANGLECODE:Pdecimal              EQUATE('p')
 MANGLECODE:CstringRaw            EQUATE('c')
+MANGLECODE:UstringRaw            EQUATE('z')
 MANGLECODE:GroupRaw              EQUATE('v')
 MANGLECODE:Group                 EQUATE('g')
 MANGLECODE:Any                   EQUATE('u')
@@ -85,11 +88,13 @@ TYPE:Bfloat8                EQUATE('BFLOAT8')
 TYPE:String                 EQUATE('STRING')
 TYPE:Pstring                EQUATE('PSTRING')
 TYPE:Cstring                EQUATE('CSTRING')
+TYPE:Ustring                EQUATE('USTRING')
 TYPE:Short                  EQUATE('SHORT')
 TYPE:Long                   EQUATE('LONG')
 TYPE:Sreal                  EQUATE('SREAL')
 TYPE:Real                   EQUATE('REAL')
 TYPE:Decimal                EQUATE('DECIMAL')
+!TYPE:DateTime               EQUATE('DATETIME')     !Added 12.0.142xx is a DECIMAL(19,7) 
 TYPE:Pdecimal               EQUATE('PDECIMAL')
 TYPE:CstringRaw             EQUATE('CSTRINGRAW')
 TYPE:GroupRaw               EQUATE('GROUPRAW')
@@ -407,6 +412,7 @@ ParameterStartPos       LONG
                 OF MANGLECODE:String;      q.ParameterType = TYPE:String
                 OF MANGLECODE:Pstring;     q.ParameterType = TYPE:Pstring
                 OF MANGLECODE:Cstring;     q.ParameterType = TYPE:Cstring
+                OF MANGLECODE:Ustring;     q.ParameterType = TYPE:Ustring
                 OF MANGLECODE:Short;       q.ParameterType = TYPE:Short
                 OF MANGLECODE:Long;        q.ParameterType = TYPE:Long
                 OF MANGLECODE:Sreal;       q.ParameterType = TYPE:Sreal
@@ -415,6 +421,9 @@ ParameterStartPos       LONG
                 OF MANGLECODE:Pdecimal;    q.ParameterType = TYPE:Pdecimal
                 OF MANGLECODE:CstringRaw
                     q.ParameterType = TYPE:Cstring
+                    q.IsRaw         = True
+                OF MANGLECODE:UstringRaw
+                    q.ParameterType = TYPE:Ustring
                     q.IsRaw         = True
                 OF MANGLECODE:GroupRaw
                     q.ParameterType = TYPE:Group
@@ -503,6 +512,7 @@ PARSESTATE:UserTypePrefix   EQUATE
                 OROF MANGLECODE:Decimal
                 OROF MANGLECODE:Pdecimal
                 OROF MANGLECODE:CstringRaw
+                OROF MANGLECODE:UstringRaw
                 OROF MANGLECODE:GroupRaw
                 OROF MANGLECODE:Group
                 OROF MANGLECODE:Any
@@ -580,6 +590,7 @@ PARSESTATE:UserTypePrefix   EQUATE
                     OROF SUB(MANGLECODE:String, 2, 1)
                     OROF SUB(MANGLECODE:Pstring, 2, 1)
                     OROF SUB(MANGLECODE:Cstring, 2, 1)
+                    OROF SUB(MANGLECODE:Ustring, 2, 1)
                         ReturnValue = CLIP(ReturnValue) & SELF.ExpString[ (SELF.CharacterIndex +1) ]
                         SELF.CharacterIndex += 1
                         BREAK
